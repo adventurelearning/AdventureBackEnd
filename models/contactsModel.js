@@ -4,8 +4,13 @@ const Schema=mongoose.Schema({
     Name:String,
     Email:String,
     Number:String,
-    Course:String,
-    AnyQuerys:String,
+    Sub:{
+        type:String,
+        default:"General Enquiry"
+    },
+    message:{
+        type:String,
+    }
 },{timestamps:true}
 );
 
