@@ -10,7 +10,7 @@ const Schema=mongoose.Schema({
     phone_number:{
         type:String
     },
-    Sub:{
+    sub:{
         type:String,
         default:"General Enquiry"
     },
