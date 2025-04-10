@@ -21,7 +21,6 @@ app.use(express.json());
 
 
 app.use('/api/corporate-training', corporateTrainingRoutes);
-// app.use('/api/contacts',contactRouter)
 app.use('/api/admin',adminRouter)
 app.use('/api/contacts', contactRoutes);
 app.use('/api/register', registerRoutes);

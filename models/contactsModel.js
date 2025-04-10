@@ -1,9 +1,15 @@
 const mongoose=require('mongoose');
 
 const Schema=mongoose.Schema({
-    Name:String,
-    Email:String,
-    Number:String,
+    name:{
+        type:String
+    },
+    email:{
+        type:String,
+    },
+    phone_number:{
+        type:String
+    },
     Sub:{
         type:String,
         default:"General Enquiry"
