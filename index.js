@@ -1,3 +1,5 @@
+
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -5,9 +7,10 @@ const connectDB = require("./config/config");
 const contactRoutes = require("./routes/contactsRoutes");
 const registerRoutes = require("./routes/registerRoutes");
 const authRoutes = require("./routes/authRoutes");
-
 const corporateTrainingRoutes = require("./routes/corporateTrainingRoutes");
-require("dotenv").config();
+const InternRoutes = require("./routes/InternRegisterRoute");
+const JobApplicationRoutes = require("./routes/jobapplicationRoutes");
+const contactTechRoutes = require("./routes/contactTechRoute");
 
 connectDB();
 
@@ -23,6 +26,10 @@ app.use("/api/corporate-training", corporateTrainingRoutes);
 app.use("/api/contacts", contactRoutes);
 app.use("/api/register", registerRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/intern", InternRoutes);
+app.use("/api/jobapplication", JobApplicationRoutes);
+app.use("/api/contact-tech", contactTechRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("Server is running Goodly");
