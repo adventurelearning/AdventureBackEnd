@@ -8,7 +8,8 @@ const formDataSchema = new mongoose.Schema({
   degree: { type: String, required: true },
   mainCourse: { type: String, required: true },
   internshipDomain: { type: String, required: true },
-  additionalComments: { type: String }
+  additionalComments: { type: String },
+  resumeUrl: { type: String, required: true },
 }, { timestamps: true });
 
 module.exports = mongoose.model('intern', formDataSchema);
