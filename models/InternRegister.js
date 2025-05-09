@@ -9,7 +9,7 @@ const formDataSchema = new mongoose.Schema(
     degree: { type: String, required: true },
     mainCourse: { type: String, required: true },
     internshipDomain: { type: String, required: true },
-    mode: { type: String, required: true },
+    trainingMode: { type: String, required: true },
     additionalComments: { type: String },
     resumeUrl: { type: String,},
   },
