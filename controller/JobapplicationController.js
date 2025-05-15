@@ -7,18 +7,25 @@ exports.submitApplication = async (req, res) => {
     if (!fullName || !email || !phone || !resumeUrl) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-
-    const application = new Application({ fullName, email, phone, resumeUrl, coverLetter });
+    const user = await User.findOne({ email });
+    if (!user) {
+      const application = new Application({ fullName, email, phone, resumeUrl, coverLetter });
     await application.save();
 
     res.status(201).json({ message: 'Application submitted successfully', application });
+    }
+    else{
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 exports.getAllApplications = async (req, res) => {
   try {
-    const applications = await Application.find();
+    const applications = await Application.find().sort({ createdAt: -1 });
     res.status(200).json({ message: 'Applications retrieved successfully', data: applications });
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch applications', error: error.message });

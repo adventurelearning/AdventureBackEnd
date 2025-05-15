@@ -12,6 +12,7 @@ const formDataSchema = new mongoose.Schema(
     trainingMode: { type: String, required: true },
     additionalComments: { type: String },
     resumeUrl: { type: String,},
+    status: { type: String,},
   },
   { timestamps: true }
 );

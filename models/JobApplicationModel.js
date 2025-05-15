@@ -5,7 +5,8 @@ const applicationSchema = new mongoose.Schema({
   email: { type: String, required: true },
   phone: { type: String, required: true },
   resumeUrl: { type: String, required: true },
-  coverLetter: { type: String } // Optional
+  coverLetter: { type: String }, // Optional
+  status: { type: String, }
 }, { timestamps: true });
 
 module.exports = mongoose.model('JobApplication', applicationSchema);

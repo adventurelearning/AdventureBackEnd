@@ -11,7 +11,7 @@ exports.submitForm = async (req, res) => {
 };
 exports.getAllInterns = async (req, res) => {
   try {
-    const interns = await Intern.find();
+    const interns = await Intern.find().sort({ createdAt: -1 });
     res.status(200).json({ message: 'Interns retrieved successfully', data: interns });
   } catch (error) {
     res.status(500).json({ message: 'Failed to retrieve interns', error: error.message });

@@ -18,6 +18,10 @@ const Schema=mongoose.Schema({
     },
     message:{
         type:String,
+    },
+    status:{
+        type:String,
+        // default:"Pending"
     }
 },{timestamps:true}
 );
