@@ -7,7 +7,7 @@ exports.createRegister = async (req, res) => {
 
         const existingRegister = await Register.findOne({ email: register.email });
         if (existingRegister) {
-            return res.status(400).json({ message: 'Email Already Submitted' });
+            return res.status(400).json({ message: 'User already Registered' });
         }
         else{
             await register.save();
