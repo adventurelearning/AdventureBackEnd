@@ -3,8 +3,18 @@ const Register = require('../models/RegisterForm');
 // Create new registration
 exports.createRegister = async (req, res) => {
     try {
-        const register = await Register.create(req.body);
-        res.status(201).json(register);
+        const register = await new Register(req.body);
+
+        const existingRegister = await Register.findOne({ email: register.email });
+        if (existingRegister) {
+            return res.status(400).json({ message: 'Email Already Submitted' });
+        }
+        else{
+            await register.save();
+             res.status(201).json({ message: 'Form submitted successfully' });
+        }
+
+       ;
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
