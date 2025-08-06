@@ -15,7 +15,7 @@ exports.submitApplication = async (req, res) => {
     res.status(201).json({ message: 'Application submitted successfully', application });
     }
     else{
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'Application already Submitted' });
     }
 
     
