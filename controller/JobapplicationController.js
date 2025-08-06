@@ -7,7 +7,7 @@ exports.submitApplication = async (req, res) => {
     if (!fullName || !email || !phone || !resumeUrl) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    const user = await User.findOne({ email });
+    const user = await Application.findOne({ email });
     if (!user) {
       const application = new Application({ fullName, email, phone, resumeUrl, coverLetter });
     await application.save();
