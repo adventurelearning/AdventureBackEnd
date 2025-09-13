@@ -26,7 +26,7 @@ exports.createRegister = async (req, res) => {
         // Send confirmation email
         const mailOptions = {
             from: process.env.EMAIL_USER,
-            to: 'adventure.webapp@gmail.com,info@adventuretechnologysolutions.com',
+            to: 'adventure.webapp@gmail.com,info@adventuretechnologysolutions.com,adventuremarketing.cbe@gmail.com,adventureofficial.cbe@gmail.com',
             subject: 'Course Registration Successful',
             text: `Hello ${register.name},\n\nPhone Number : ${register.phone_number}\n\n
             \n\nCourse : ${register.courses}\n\n
