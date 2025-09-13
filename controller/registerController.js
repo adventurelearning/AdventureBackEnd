@@ -1,25 +1,50 @@
 const Register = require('../models/RegisterForm');
-
+const nodemailer = require('nodemailer');
 // Create new registration
+// Setup transporter (you should put this outside the handler ideally)
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+console.log('Transporter Config:', transporter,process.env.EMAIL_USER);
+
 exports.createRegister = async (req, res) => {
     try {
-        const register = await new Register(req.body);
+        const register = new Register(req.body);
 
         const existingRegister = await Register.findOne({ email: register.email });
         if (existingRegister) {
             return res.status(400).json({ message: 'User already Registered' });
         }
-        else{
-            await register.save();
-             res.status(201).json({ message: 'Form submitted successfully' });
-        }
 
-       ;
+        await register.save();
+
+        // Send confirmation email
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: 'adventure.webapp@gmail.com',
+            subject: 'Course Registration Successful',
+            text: `Hello ${register.name},\n\nPhone Number ${register.phone_number}\n\nhttps://admin.adventurelearning.in/register`
+        };
+
+        transporter.sendMail(mailOptions, (err, info) => {
+            if (err) {
+                console.error('Error sending email:', err);
+                return res.status(500).json({ message: 'Form saved but email not sent' });
+            } else {
+                console.log('Email sent:', info.response);
+                return res.status(201).json({ message: 'Form submitted successfully and email sent' });
+            }
+        });
+
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
-
 // Get all registrations
 exports.getAllRegisters = async (req, res) => {
     try {

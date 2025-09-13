@@ -11,6 +11,9 @@ const corporateTrainingRoutes = require("./routes/corporateTrainingRoutes");
 const InternRoutes = require("./routes/InternRegisterRoute");
 const JobApplicationRoutes = require("./routes/jobapplicationRoutes");
 const contactTechRoutes = require("./routes/contactTechRoute");
+const nodemailer=require("nodemailer")
+
+console.log(nodemailer)
 
 connectDB();
 
