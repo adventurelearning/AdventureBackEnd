@@ -12,6 +12,7 @@ const InternRoutes = require("./routes/InternRegisterRoute");
 const JobApplicationRoutes = require("./routes/jobapplicationRoutes");
 const contactTechRoutes = require("./routes/contactTechRoute");
 const nodemailer=require("nodemailer")
+const certificateRoutes = require('./routes/certificates');
 
 console.log(nodemailer)
 
@@ -32,6 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/intern", InternRoutes);
 app.use("/api/jobapplication", JobApplicationRoutes);
 app.use("/api/contact-tech", contactTechRoutes);
+app.use("/api/certificates", certificateRoutes);
 
 
 app.get("/", (req, res) => {
