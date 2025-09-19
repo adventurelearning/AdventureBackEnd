@@ -1,8 +1,12 @@
-
 require("dotenv").config();
 const express = require("express");
-const app = express();
 const cors = require("cors");
+const { ApolloServer } = require("@apollo/server");
+const { expressMiddleware } = require("@as-integrations/express4");
+const { ApolloServerPluginDrainHttpServer } = require("@apollo/server/plugin/drainHttpServer");
+const http = require("http");
+
+// Import DB connection and routes
 const connectDB = require("./config/config");
 const contactRoutes = require("./routes/contactsRoutes");
 const registerRoutes = require("./routes/registerRoutes");
@@ -15,27 +19,57 @@ const nodemailer=require("nodemailer")
 
 console.log(nodemailer)
 
+// GraphQL schema and resolvers
+const typeDefs = require("./graphql/schema");
+const resolvers = require("./graphql/reoslvers");
+
 connectDB();
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 4000;
 
-//middlewares
-
-app.use(cors());
+async function startServer() {
+  const app = express();
+  const httpServer = http.createServer(app);
+  app.use(cors());
 app.use(express.json());
 
-app.use("/api/corporate-training", corporateTrainingRoutes);
+  // Create Apollo Server
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+  });
+
+  await server.start();
+
+  // Middlewares for GraphQL endpoint
+  app.use(
+    "/graphql",
+    expressMiddleware(server, {
+      context: async ({ req }) => ({
+        token: req.headers.authorization || "",
+      }),
+    })
+  );
+
+  // REST API routes
+  app.use("/api/corporate-training", corporateTrainingRoutes);
 // app.use('/api/admin',adminRouter)
-app.use("/api/contacts", contactRoutes);
-app.use("/api/register", registerRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/intern", InternRoutes);
-app.use("/api/jobapplication", JobApplicationRoutes);
-app.use("/api/contact-tech", contactTechRoutes);
+  app.use("/api/contacts", contactRoutes);
+  app.use("/api/register", registerRoutes);
+  app.use("/api/auth", authRoutes);
+  app.use("/api/intern", InternRoutes);
+  app.use("/api/jobapplication", JobApplicationRoutes);
+  app.use("/api/contact-tech", contactTechRoutes);
 
+  app.get("/", (req, res) => {
+    res.send("Server is running Goodly 🚀");
+  });
 
-app.get("/", (req, res) => {
-  res.send("Server is running Goodly");
-});
+  // Start server
+  await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
+  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`🚀 GraphQL endpoint ready at http://localhost:${PORT}/graphql`);
+}
 
-app.listen(PORT, console.log(`Server is running at ${PORT}`));
+startServer();
