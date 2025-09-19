@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const certificateSchema = new mongoose.Schema({
   name: {
@@ -23,7 +24,7 @@ const certificateSchema = new mongoose.Schema({
     required: true
   },
   duration: {
-    type: Number, // Duration in days
+    type: Number,
     required: true
   },
   startDate: {
@@ -58,19 +59,46 @@ const certificateSchema = new mongoose.Schema({
   lastVerified: {
     type: Date,
     default: null
+  },
+  studentCredentials: {
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      required: true
+    },
+    password: {
+      type: String,
+      required: true
+    }
   }
 });
 
-// Index for better query performance
 certificateSchema.index({ certificateNumber: 1 });
 certificateSchema.index({ name: 'text' });
 certificateSchema.index({ mobileNumber: 1 });
+certificateSchema.index({ 'studentCredentials.username': 1 });
 
-// Method to update verification stats
 certificateSchema.methods.updateVerificationStats = function() {
   this.verificationCount += 1;
   this.lastVerified = new Date();
   return this.save();
+};
+
+certificateSchema.methods.generateUsername = function() {
+  const namePart = this.name.replace(/\s+/g, '').toLowerCase().substring(0, 6);
+  const randomPart = Math.floor(1000 + Math.random() * 9000);
+  return `${namePart}${randomPart}`;
+};
+
+certificateSchema.methods.setPassword = async function(password) {
+  const saltRounds = 10;
+  this.studentCredentials.password = await bcrypt.hash(password, saltRounds);
+  return this.save();
+};
+
+certificateSchema.statics.findByUsername = function(username) {
+  return this.findOne({ 'studentCredentials.username': username });
 };
 
 module.exports = mongoose.model('Certificate', certificateSchema);

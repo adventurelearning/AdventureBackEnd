@@ -2,20 +2,20 @@ const express = require('express');
 const multer = require('multer');
 const cloudinary = require('../config/cloudinary');
 const Certificate = require('../models/Certificate');
+const bcrypt = require('bcryptjs');
 const router = express.Router();
 
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-// Calculate duration in days between two dates
 const calculateDuration = (startDate, endDate) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
   const timeDiff = Math.abs(end.getTime() - start.getTime());
-  return Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // Include both start and end dates
+  return Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
 };
 
 // POST - Upload certificate with image and course details
@@ -25,16 +25,14 @@ router.post('/', upload.single('image'), async (req, res) => {
       return res.status(400).json({ message: 'No image file provided' });
     }
 
-    const { name, certificateNumber, mobileNumber, course, startDate, endDate } = req.body;
+    const { name, certificateNumber, mobileNumber, course, startDate, endDate, generateCredentials, username, password } = req.body;
     
-    // Validate dates
     if (new Date(startDate) > new Date(endDate)) {
       return res.status(400).json({ message: 'End date must be after start date' });
     }
 
     const duration = calculateDuration(startDate, endDate);
 
-    // Upload to Cloudinary
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: 'certificates' },
@@ -46,8 +44,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       stream.end(req.file.buffer);
     });
 
-    // Save to database
-    const certificate = new Certificate({
+    const certificateData = {
       name,
       certificateNumber,
       mobileNumber,
@@ -57,16 +54,111 @@ router.post('/', upload.single('image'), async (req, res) => {
       endDate: new Date(endDate),
       imageUrl: result.secure_url,
       publicId: result.public_id
-    });
+    };
 
-    await certificate.save();
-    res.status(201).json(certificate);
+    if (generateCredentials === 'true') {
+      const certificate = new Certificate(certificateData);
+      
+      let finalUsername;
+      let finalPassword;
+      
+      if (username && username.trim() !== '') {
+        // Use the provided username
+        finalUsername = username.trim();
+        
+        // Check if username already exists
+        const existingCert = await Certificate.findOne({ 
+          'studentCredentials.username': finalUsername 
+        });
+        
+        if (existingCert) {
+          await cloudinary.uploader.destroy(result.public_id);
+          return res.status(400).json({ message: 'Username already exists' });
+        }
+      } else {
+        // Generate a username
+        finalUsername = certificate.generateUsername();
+      }
+      
+      if (password && password.trim() !== '') {
+        // Use the provided password
+        finalPassword = password.trim();
+      } else {
+        // Generate a random password
+        finalPassword = Math.random().toString(36).slice(-8);
+      }
+      
+      // Hash password
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(finalPassword, saltRounds);
+      
+      certificate.studentCredentials = {
+        username: finalUsername,
+        password: hashedPassword
+      };
+      
+      await certificate.save();
+      
+      res.status(201).json({
+        certificate,
+        credentials: {
+          username: finalUsername,
+          password: finalPassword
+        }
+      });
+    } else {
+      const certificate = new Certificate(certificateData);
+      await certificate.save();
+      res.status(201).json(certificate);
+    }
   } catch (error) {
     console.error('Upload error:', error);
     if (error.code === 11000) {
-      return res.status(400).json({ message: 'Certificate number already exists' });
+      if (error.keyPattern.certificateNumber) {
+        return res.status(400).json({ message: 'Certificate number already exists' });
+      }
+      if (error.keyPattern['studentCredentials.username']) {
+        return res.status(400).json({ message: 'Username already exists, please try again' });
+      }
     }
     res.status(500).json({ message: 'Server error during upload' });
+  }
+});
+
+// POST - Student login
+router.post('/student-login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+    
+    const certificate = await Certificate.findOne({ 
+      'studentCredentials.username': username 
+    });
+    
+    if (!certificate) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    const isPasswordValid = await bcrypt.compare(
+      password, 
+      certificate.studentCredentials.password
+    );
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    const { studentCredentials, ...certificateWithoutPassword } = certificate.toObject();
+    res.json({
+      message: 'Login successful',
+      certificate: certificateWithoutPassword
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error during login' });
   }
 });
 
@@ -113,7 +205,6 @@ router.get('/verify', async (req, res) => {
   try {
     const { name, certificateNumber, mobileNumber, verifyByNumberOnly } = req.query;
     
-    // If verifyByNumberOnly is true, only certificateNumber is required
     if (verifyByNumberOnly === 'true') {
       if (!certificateNumber) {
         return res.status(400).json({ 
@@ -138,7 +229,6 @@ router.get('/verify', async (req, res) => {
       }
     }
     
-    // Original verification logic (requires all fields)
     if (!name || !certificateNumber || !mobileNumber) {
       return res.status(400).json({ 
         verified: false, 
@@ -190,7 +280,6 @@ router.get('/verify-by-number', async (req, res) => {
     });
 
     if (certificate) {
-      // Update verification statistics
       await certificate.updateVerificationStats();
       
       res.json({ 
@@ -249,6 +338,56 @@ router.get('/courses', async (req, res) => {
   }
 });
 
+// PUT - Update student credentials for a certificate
+router.put('/:id/credentials', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+    
+    const certificate = await Certificate.findById(req.params.id);
+    
+    if (!certificate) {
+      return res.status(404).json({ message: 'Certificate not found' });
+    }
+    
+    // Check if username already exists (excluding current certificate)
+    const existingCert = await Certificate.findOne({
+      'studentCredentials.username': username,
+      _id: { $ne: req.params.id }
+    });
+    
+    if (existingCert) {
+      return res.status(400).json({ message: 'Username already exists' });
+    }
+    
+    // Hash the new password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    
+    // Update credentials
+    certificate.studentCredentials = {
+      username,
+      password: hashedPassword
+    };
+    
+    await certificate.save();
+    
+    res.json({
+      message: 'Credentials updated successfully',
+      credentials: {
+        username,
+        password // Returning the plain text password only once
+      }
+    });
+  } catch (error) {
+    console.error('Update credentials error:', error);
+    res.status(500).json({ message: 'Server error during credentials update' });
+  }
+});
+
 // DELETE - Remove certificate by ID
 router.delete('/:id', async (req, res) => {
   try {
@@ -257,10 +396,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Certificate not found' });
     }
 
-    // Delete image from Cloudinary
     await cloudinary.uploader.destroy(certificate.publicId);
-
-    // Delete record from MongoDB
     await Certificate.findByIdAndDelete(req.params.id);
     res.json({ message: 'Certificate deleted successfully' });
   } catch (error) {
