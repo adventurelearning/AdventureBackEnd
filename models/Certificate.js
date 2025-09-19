@@ -19,7 +19,7 @@ const certificateSchema = new mongoose.Schema({
   },
   course: {
     type: String,
-    enum: ['Web Development', 'Data Science', 'Digital Marketing', 'Graphic Design', 'Cloud Computing'],
+    enum: ['Full Stack Development', 'Embedded System', 'Data Science', 'Data Analytics', 'Cloud Computing', 'Software Testing'],
     required: true
   },
   duration: {

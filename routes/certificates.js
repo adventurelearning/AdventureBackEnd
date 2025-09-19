@@ -242,7 +242,7 @@ router.get('/download/:id', async (req, res) => {
 // GET - Get available courses
 router.get('/courses', async (req, res) => {
   try {
-    const courses = ['Web Development', 'Data Science', 'Digital Marketing', 'Graphic Design', 'Cloud Computing'];
+    const courses = ['Full Stack Development', 'Embedded System', 'Data Science', 'Data Analytics', 'Cloud Computing', 'Software Testing'];
     res.json(courses);
   } catch (error) {
     res.status(500).json({ message: error.message });
