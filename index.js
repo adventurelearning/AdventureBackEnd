@@ -2,14 +2,10 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { ApolloServer } = require("@apollo/server");
-const { expressMiddleware } = require("@as-integrations/express5");
-const {
-  ApolloServerPluginDrainHttpServer,
-} = require("@apollo/server/plugin/drainHttpServer");
-const http = require("http");
-
-// Import DB connection and routes
+const { expressMiddleware } = require("@as-integrations/express");
 const connectDB = require("./config/config");
+
+// Import routes
 const contactRoutes = require("./routes/contactsRoutes");
 const registerRoutes = require("./routes/registerRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -17,36 +13,42 @@ const corporateTrainingRoutes = require("./routes/corporateTrainingRoutes");
 const InternRoutes = require("./routes/InternRegisterRoute");
 const JobApplicationRoutes = require("./routes/jobapplicationRoutes");
 const contactTechRoutes = require("./routes/contactTechRoute");
-const nodemailer = require("nodemailer");
 
-console.log(nodemailer);
-
-// GraphQL schema and resolvers
+// GraphQL schema + resolvers
 const typeDefs = require("./graphql/schema");
 const resolvers = require("./graphql/reoslvers");
 
-
-
-
 const app = express();
+
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
-connectDB();
+// REST routes
+app.use("/api/corporate-training", corporateTrainingRoutes);
+app.use("/api/contacts", contactRoutes);
+app.use("/api/register", registerRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/intern", InternRoutes);
+app.use("/api/jobapplication", JobApplicationRoutes);
+app.use("/api/contact-tech", contactTechRoutes);
 
-const PORT = process.env.PORT || 4000;
+// Root route
+app.get("/", (req, res) => {
+  res.send("✅ Server is running with REST + GraphQL 🚀");
+});
 
-async function startServer() {
-  // Create Apollo Server
+// ✅ Function to attach Apollo Server
+async function setupApollo() {
+  await connectDB();
+
   const server = new ApolloServer({
     typeDefs,
     resolvers,
-    // plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
   });
 
   await server.start();
 
-  // Middlewares for GraphQL endpoint
   app.use(
     "/graphql",
     expressMiddleware(server, {
@@ -55,25 +57,18 @@ async function startServer() {
       }),
     })
   );
-
-  // REST API routes
-  app.use("/api/corporate-training", corporateTrainingRoutes);
-  // app.use('/api/admin',adminRouter)
-  app.use("/api/contacts", contactRoutes);
-  app.use("/api/register", registerRoutes);
-  app.use("/api/auth", authRoutes);
-  app.use("/api/intern", InternRoutes);
-  app.use("/api/jobapplication", JobApplicationRoutes);
-  app.use("/api/contact-tech", contactTechRoutes);
-
-  app.get("/", (req, res) => {
-    res.send("Server is running Goodly 🚀");
-  });
-
-  // Start server
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
 }
 
-startServer();
+setupApollo();
+
+// ✅ Export Express app for Vercel
+module.exports = app;
+
+// ✅ Local development (only runs when not in Vercel)
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`✅ Local server running at http://localhost:${PORT}`);
+    console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
+  });
+}
