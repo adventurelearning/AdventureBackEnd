@@ -64,13 +64,13 @@ async function setupApollo() {
 setupApollo();
 
 // ✅ Export Express app for Vercel
-// module.exports = app;
+module.exports = app;
 
 // ✅ Local development (only runs when not in Vercel)
 
   // const PORT = process.env.PORT || 4000;
-  app.listen(PORT, () => {
-    console.log(`✅ Local server running at http://localhost:${PORT}`);
-    console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
-  });
+  // app.listen(PORT, () => {
+  //   console.log(`✅ Local server running at http://localhost:${PORT}`);
+  //   console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
+  // });
 
