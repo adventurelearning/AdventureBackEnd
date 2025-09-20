@@ -1,5 +1,5 @@
 const Blog = require("../models/Blog");
-const BlogTopic = require("../models/Blogtopic");
+const BlogTopic = require("../models/BlogTopic");
 
 const resolvers = {
   Query: {
