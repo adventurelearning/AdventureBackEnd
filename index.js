@@ -3,11 +3,9 @@ const express = require("express");
 const cors = require("cors");
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@as-integrations/express5");
-const { ApolloServerPluginDrainHttpServer } = require("@apollo/server/plugin/drainHttpServer");
-const http = require("http");
-
-// Import DB connection and routes
 const connectDB = require("./config/config");
+
+// Import routes
 const contactRoutes = require("./routes/contactsRoutes");
 const registerRoutes = require("./routes/registerRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -15,34 +13,44 @@ const corporateTrainingRoutes = require("./routes/corporateTrainingRoutes");
 const InternRoutes = require("./routes/InternRegisterRoute");
 const JobApplicationRoutes = require("./routes/jobapplicationRoutes");
 const contactTechRoutes = require("./routes/contactTechRoute");
-const nodemailer=require("nodemailer")
 
-console.log(nodemailer)
-
-// GraphQL schema and resolvers
+// GraphQL schema + resolvers
 const typeDefs = require("./graphql/schema");
 const resolvers = require("./graphql/reoslvers");
 
-connectDB();
+const app = express();
 
-const PORT = process.env.PORT || 4000;
-
-async function startServer() {
-  const app = express();
-  const httpServer = http.createServer(app);
-  app.use(cors());
+// Middlewares
+app.use(cors({
+  origin: ["http://localhost:5173", "https://adventure-admin.vercel.app","https://admin.adventurelearning.in","https://www.adventurelearning.co.in"],
+}));
 app.use(express.json());
 
-  // Create Apollo Server
+// REST routes
+app.use("/api/corporate-training", corporateTrainingRoutes);
+app.use("/api/contacts", contactRoutes);
+app.use("/api/register", registerRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/intern", InternRoutes);
+app.use("/api/jobapplication", JobApplicationRoutes);
+app.use("/api/contact-tech", contactTechRoutes);
+
+// Root route
+app.get("/", (req, res) => {
+  res.send("✅ Server is running with REST + GraphQL 🚀");
+});
+
+// ✅ Function to attach Apollo Server
+async function setupApollo() {
+  await connectDB();
+
   const server = new ApolloServer({
     typeDefs,
     resolvers,
-    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
   });
 
   await server.start();
 
-  // Middlewares for GraphQL endpoint
   app.use(
     "/graphql",
     expressMiddleware(server, {
@@ -51,25 +59,18 @@ app.use(express.json());
       }),
     })
   );
-
-  // REST API routes
-  app.use("/api/corporate-training", corporateTrainingRoutes);
-// app.use('/api/admin',adminRouter)
-  app.use("/api/contacts", contactRoutes);
-  app.use("/api/register", registerRoutes);
-  app.use("/api/auth", authRoutes);
-  app.use("/api/intern", InternRoutes);
-  app.use("/api/jobapplication", JobApplicationRoutes);
-  app.use("/api/contact-tech", contactTechRoutes);
-
-  app.get("/", (req, res) => {
-    res.send("Server is running Goodly 🚀");
-  });
-
-  // Start server
-  await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
-  console.log(`✅ Server running at http://localhost:${PORT}`);
-  console.log(`🚀 GraphQL endpoint ready at http://localhost:${PORT}/graphql`);
 }
 
-startServer();
+setupApollo();
+
+// ✅ Export Express app for Vercel
+module.exports = app;
+
+// ✅ Local development (only runs when not in Vercel)
+
+  // const PORT = process.env.PORT || 4000;
+  // app.listen(PORT, () => {
+  //   console.log(`✅ Local server running at http://localhost:${PORT}`);
+  //   console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
+  // });
+
