@@ -22,7 +22,7 @@ const app = express();
 
 // Middlewares
 app.use(cors({
-  origin: ["http://localhost:5173", "https://adventure-admin.vercel.app","https://www.adventurelearning.co.in"],
+  origin: ["http://localhost:5173", "https://adventure-admin.vercel.app","https://admin.adventurelearning.in","https://www.adventurelearning.co.in"],
 }));
 app.use(express.json());
 
@@ -64,13 +64,13 @@ async function setupApollo() {
 setupApollo();
 
 // ✅ Export Express app for Vercel
-module.exports = app;
+// module.exports = app;
 
 // ✅ Local development (only runs when not in Vercel)
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 4000;
+
+  // const PORT = process.env.PORT || 4000;
   app.listen(PORT, () => {
     console.log(`✅ Local server running at http://localhost:${PORT}`);
     console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
   });
-}
+
