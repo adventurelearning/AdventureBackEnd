@@ -62,9 +62,13 @@ input SeoInput {
       seo: SeoInput
 
   }
+type BlogPostsResponse {
+  posts: [Blog!]!
+  topics: [BlogTopic!]!
+}
 
   type Query {
-    blogPosts(trending: Boolean, topic: String, status: String): [Blog!]!
+blogPosts(trending: Boolean, topic: String, status: String): BlogPostsResponse!
     blogPost(id: ID!): Blog
     blogPostByLink(link: String!): Blog
     blogTopics: [BlogTopic!]!

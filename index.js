@@ -22,7 +22,7 @@ const app = express();
 
 // Middlewares
 app.use(cors({
-  origin: ["http://localhost:5173", "https://adventure-admin.vercel.app","https://admin.adventurelearning.in","https://www.adventurelearning.co.in"],
+  origin: ["http://localhost:5173","http://localhost:5174", "https://adventure-admin.vercel.app","https://admin.adventurelearning.in","https://www.adventurelearning.co.in"],
 }));
 app.use(express.json());
 
