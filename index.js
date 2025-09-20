@@ -21,7 +21,9 @@ const resolvers = require("./graphql/reoslvers");
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:5173", "https://adventure-admin.vercel.app","https://www.adventurelearning.co.in"],
+}));
 app.use(express.json());
 
 // REST routes
