@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@apollo/server": "^5.0.0",
-    "@as-integrations/express4": "^1.1.2",
+    "@as-integrations/express5": "^1.1.2",
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
