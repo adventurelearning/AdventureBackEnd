@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { ApolloServer } = require("@apollo/server");
-const { expressMiddleware } = require("@as-integrations/express4");
+const { expressMiddleware } = require("@as-integrations/express5");
 const { ApolloServerPluginDrainHttpServer } = require("@apollo/server/plugin/drainHttpServer");
 const http = require("http");
 
