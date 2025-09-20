@@ -8,23 +8,26 @@ const resolvers = {
       if (trending !== undefined) query.trending = trending;
       if (topic) query.topic = topic;
       if (status) query.status = status;
-      
-      return await Blog.find(query).sort({ order: 1, updatedAt: -1 });
+
+      const posts = await Blog.find(query).sort({ order: 1, updatedAt: -1 });
+      const topics = await BlogTopic.find().sort({ order: 1 });
+
+      return { posts, topics };
     },
-    
+
     blogPost: async (_, { id }) => {
       return await Blog.findById(id);
     },
-    
+
     blogPostByLink: async (_, { link }) => {
       return await Blog.findOne({ link });
     },
-    
+
     blogTopics: async () => {
       return await BlogTopic.find().sort({ order: 1 });
     },
   },
-  
+
   Mutation: {
     createBlogPost: async (_, { input }) => {
       const blog = new Blog({
@@ -36,7 +39,7 @@ const resolvers = {
       await blog.save();
       return blog;
     },
-    
+
     updateBlogPost: async (_, { id, input }) => {
       return await Blog.findByIdAndUpdate(
         id,
@@ -44,12 +47,12 @@ const resolvers = {
         { new: true }
       );
     },
-    
+
     deleteBlogPost: async (_, { id }) => {
       await Blog.findByIdAndDelete(id);
       return true;
     },
-    
+
     updateBlogStatus: async (_, { id, status }) => {
       return await Blog.findByIdAndUpdate(
         id,
@@ -57,13 +60,13 @@ const resolvers = {
         { new: true }
       );
     },
-    
+
     createBlogTopic: async (_, { topic, order }) => {
       const newTopic = new BlogTopic({ topic, order });
       await newTopic.save();
       return newTopic;
     },
-    
+
     updateBlogTopic: async (_, { id, topic, order }) => {
       return await BlogTopic.findByIdAndUpdate(
         id,
@@ -71,12 +74,12 @@ const resolvers = {
         { new: true }
       );
     },
-    
+
     deleteBlogTopic: async (_, { id }) => {
       await BlogTopic.findByIdAndDelete(id);
       return true;
     },
-    
+
     likeBlogPost: async (_, { id }) => {
       return await Blog.findByIdAndUpdate(
         id,
