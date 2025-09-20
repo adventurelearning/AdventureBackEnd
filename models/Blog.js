@@ -17,7 +17,7 @@ const blogSchema = new mongoose.Schema(
     trending: { type: Boolean, default: false },
     order: { type: Number, default: 0 },
     status: { type: String },
-    likes: { type: Number, default: 0 }, // Added likes field
+    likes: { type: Number, default: 0 }, 
      seo: {
       metaTitle: { type: String, required: false },
       metaDescription: { type: String, required: false },
