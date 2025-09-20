@@ -1,15 +1,7 @@
 const express = require('express');
-const multer = require('multer');
-const cloudinary = require('../config/cloudinary');
 const Certificate = require('../models/Certificate');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
-
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }
-});
 
 const calculateDuration = (startDate, endDate) => {
   const start = new Date(startDate);
@@ -18,13 +10,9 @@ const calculateDuration = (startDate, endDate) => {
   return Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
 };
 
-// POST - Upload certificate with image and course details
-router.post('/', upload.single('image'), async (req, res) => {
+// POST - Create certificate
+router.post('/', async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No image file provided' });
-    }
-
     const { name, certificateNumber, mobileNumber, course, startDate, endDate, generateCredentials, username, password } = req.body;
     
     if (new Date(startDate) > new Date(endDate)) {
@@ -33,16 +21,9 @@ router.post('/', upload.single('image'), async (req, res) => {
 
     const duration = calculateDuration(startDate, endDate);
 
-    const result = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: 'certificates' },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
-      stream.end(req.file.buffer);
-    });
+    // Use fixed template image URL instead of uploading
+    const templateImageUrl = `${req.protocol}://${req.get('host')}/assets/certificate.jpeg`;
+    const publicId = 'certificate-template'; // Static identifier
 
     const certificateData = {
       name,
@@ -52,43 +33,36 @@ router.post('/', upload.single('image'), async (req, res) => {
       duration,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      imageUrl: result.secure_url,
-      publicId: result.public_id
+      templateImageUrl,
+      publicId
     };
 
-    if (generateCredentials === 'true') {
+    if (generateCredentials === 'true' || generateCredentials === true) {
       const certificate = new Certificate(certificateData);
       
       let finalUsername;
       let finalPassword;
       
       if (username && username.trim() !== '') {
-        // Use the provided username
         finalUsername = username.trim();
         
-        // Check if username already exists
         const existingCert = await Certificate.findOne({ 
           'studentCredentials.username': finalUsername 
         });
         
         if (existingCert) {
-          await cloudinary.uploader.destroy(result.public_id);
           return res.status(400).json({ message: 'Username already exists' });
         }
       } else {
-        // Generate a username
         finalUsername = certificate.generateUsername();
       }
       
       if (password && password.trim() !== '') {
-        // Use the provided password
         finalPassword = password.trim();
       } else {
-        // Generate a random password
         finalPassword = Math.random().toString(36).slice(-8);
       }
       
-      // Hash password
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(finalPassword, saltRounds);
       
@@ -112,7 +86,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       res.status(201).json(certificate);
     }
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('Create certificate error:', error);
     if (error.code === 11000) {
       if (error.keyPattern.certificateNumber) {
         return res.status(400).json({ message: 'Certificate number already exists' });
@@ -121,7 +95,7 @@ router.post('/', upload.single('image'), async (req, res) => {
         return res.status(400).json({ message: 'Username already exists, please try again' });
       }
     }
-    res.status(500).json({ message: 'Server error during upload' });
+    res.status(500).json({ message: 'Server error during certificate creation' });
   }
 });
 
@@ -311,17 +285,7 @@ router.get('/download/:id', async (req, res) => {
       return res.status(404).json({ message: 'Certificate not found' });
     }
     
-    res.json({
-      name: certificate.name,
-      certificateNumber: certificate.certificateNumber,
-      mobileNumber: certificate.mobileNumber,
-      course: certificate.course,
-      duration: certificate.duration,
-      startDate: certificate.startDate,
-      endDate: certificate.endDate,
-      imageUrl: certificate.imageUrl,
-      issueDate: certificate.issueDate
-    });
+    res.json(certificate);
   } catch (error) {
     console.error('Download error:', error);
     res.status(500).json({ message: 'Server error during download' });
@@ -353,7 +317,6 @@ router.put('/:id/credentials', async (req, res) => {
       return res.status(404).json({ message: 'Certificate not found' });
     }
     
-    // Check if username already exists (excluding current certificate)
     const existingCert = await Certificate.findOne({
       'studentCredentials.username': username,
       _id: { $ne: req.params.id }
@@ -363,11 +326,9 @@ router.put('/:id/credentials', async (req, res) => {
       return res.status(400).json({ message: 'Username already exists' });
     }
     
-    // Hash the new password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     
-    // Update credentials
     certificate.studentCredentials = {
       username,
       password: hashedPassword
@@ -379,7 +340,7 @@ router.put('/:id/credentials', async (req, res) => {
       message: 'Credentials updated successfully',
       credentials: {
         username,
-        password // Returning the plain text password only once
+        password
       }
     });
   } catch (error) {
@@ -396,7 +357,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Certificate not found' });
     }
 
-    await cloudinary.uploader.destroy(certificate.publicId);
+    // Remove cloudinary deletion since we're using static template
     await Certificate.findByIdAndDelete(req.params.id);
     res.json({ message: 'Certificate deleted successfully' });
   } catch (error) {
