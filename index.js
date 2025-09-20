@@ -3,7 +3,9 @@ const express = require("express");
 const cors = require("cors");
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@as-integrations/express5");
-const { ApolloServerPluginDrainHttpServer } = require("@apollo/server/plugin/drainHttpServer");
+const {
+  ApolloServerPluginDrainHttpServer,
+} = require("@apollo/server/plugin/drainHttpServer");
 const http = require("http");
 
 // Import DB connection and routes
@@ -15,29 +17,31 @@ const corporateTrainingRoutes = require("./routes/corporateTrainingRoutes");
 const InternRoutes = require("./routes/InternRegisterRoute");
 const JobApplicationRoutes = require("./routes/jobapplicationRoutes");
 const contactTechRoutes = require("./routes/contactTechRoute");
-const nodemailer=require("nodemailer")
+const nodemailer = require("nodemailer");
 
-console.log(nodemailer)
+console.log(nodemailer);
 
 // GraphQL schema and resolvers
 const typeDefs = require("./graphql/schema");
 const resolvers = require("./graphql/reoslvers");
+
+
+
+
+const app = express();
+app.use(cors());
+app.use(express.json());
 
 connectDB();
 
 const PORT = process.env.PORT || 4000;
 
 async function startServer() {
-  const app = express();
-  const httpServer = http.createServer(app);
-  app.use(cors());
-app.use(express.json());
-
   // Create Apollo Server
   const server = new ApolloServer({
     typeDefs,
     resolvers,
-    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+    // plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
   });
 
   await server.start();
@@ -54,7 +58,7 @@ app.use(express.json());
 
   // REST API routes
   app.use("/api/corporate-training", corporateTrainingRoutes);
-// app.use('/api/admin',adminRouter)
+  // app.use('/api/admin',adminRouter)
   app.use("/api/contacts", contactRoutes);
   app.use("/api/register", registerRoutes);
   app.use("/api/auth", authRoutes);
@@ -67,9 +71,9 @@ app.use(express.json());
   });
 
   // Start server
-  await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
-  console.log(`✅ Server running at http://localhost:${PORT}`);
-  console.log(`🚀 GraphQL endpoint ready at http://localhost:${PORT}/graphql`);
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
 }
 
 startServer();
