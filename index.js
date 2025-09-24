@@ -1,9 +1,11 @@
-
 require("dotenv").config();
 const express = require("express");
-const app = express();
 const cors = require("cors");
+const { ApolloServer } = require("@apollo/server");
+const { expressMiddleware } = require("@as-integrations/express5");
 const connectDB = require("./config/config");
+
+// Import routes
 const contactRoutes = require("./routes/contactsRoutes");
 const registerRoutes = require("./routes/registerRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -16,17 +18,20 @@ const certificateRoutes = require('./routes/certificates');
 
 console.log(nodemailer)
 
-connectDB();
+// GraphQL schema + resolvers
+const typeDefs = require("./graphql/schema");
+const resolvers = require("./graphql/reoslvers");
 
-const PORT = process.env.PORT;
+const app = express();
 
-//middlewares
-
-app.use(cors());
+// Middlewares
+app.use(cors({
+  origin: ["http://localhost:5173","http://localhost:5174", "https://adventure-admin.vercel.app","https://admin.adventurelearning.in","https://www.adventurelearning.co.in"],
+}));
 app.use(express.json());
 
+// REST routes
 app.use("/api/corporate-training", corporateTrainingRoutes);
-// app.use('/api/admin',adminRouter)
 app.use("/api/contacts", contactRoutes);
 app.use("/api/register", registerRoutes);
 app.use("/api/auth", authRoutes);
@@ -35,9 +40,42 @@ app.use("/api/jobapplication", JobApplicationRoutes);
 app.use("/api/contact-tech", contactTechRoutes);
 app.use("/api/certificates", certificateRoutes);
 
-
+// Root route
 app.get("/", (req, res) => {
-  res.send("Server is running Goodly");
+  res.send("✅ Server is running with REST + GraphQL 🚀");
 });
 
-app.listen(PORT, console.log(`Server is running at ${PORT}`));
+// ✅ Function to attach Apollo Server
+async function setupApollo() {
+  await connectDB();
+
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+  });
+
+  await server.start();
+
+  app.use(
+    "/graphql",
+    expressMiddleware(server, {
+      context: async ({ req }) => ({
+        token: req.headers.authorization || "",
+      }),
+    })
+  );
+}
+
+setupApollo();
+
+// ✅ Export Express app for Vercel
+module.exports = app;
+
+// ✅ Local development (only runs when not in Vercel)
+
+  // const PORT = process.env.PORT || 4000;
+  // app.listen(PORT, () => {
+  //   console.log(`✅ Local server running at http://localhost:${PORT}`);
+  //   console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
+  // });
+
