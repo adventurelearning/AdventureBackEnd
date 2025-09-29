@@ -13,21 +13,29 @@ const corporateTrainingRoutes = require("./routes/corporateTrainingRoutes");
 const InternRoutes = require("./routes/InternRegisterRoute");
 const JobApplicationRoutes = require("./routes/jobapplicationRoutes");
 const contactTechRoutes = require("./routes/contactTechRoute");
-const nodemailer=require("nodemailer")
-const certificateRoutes = require('./routes/certificates');
+const nodemailer = require("nodemailer");
+const certificateRoutes = require("./routes/certificates");
 
-console.log(nodemailer)
+console.log(nodemailer);
 
 // GraphQL schema + resolvers
 const typeDefs = require("./graphql/schema");
 const resolvers = require("./graphql/reoslvers");
 
 const app = express();
-
+connectDB();
 // Middlewares
-app.use(cors({
-  origin: ["http://localhost:5173","http://localhost:5174", "https://adventure-admin.vercel.app","https://admin.adventurelearning.in","https://www.adventurelearning.co.in"],
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://adventure-admin.vercel.app",
+      "https://admin.adventurelearning.in",
+      "https://www.adventurelearning.co.in",
+    ],
+  })
+);
 app.use(express.json());
 
 // REST routes
@@ -47,8 +55,6 @@ app.get("/", (req, res) => {
 
 // ✅ Function to attach Apollo Server
 async function setupApollo() {
-  await connectDB();
-
   const server = new ApolloServer({
     typeDefs,
     resolvers,
@@ -73,9 +79,8 @@ module.exports = app;
 
 // ✅ Local development (only runs when not in Vercel)
 
-  // const PORT = process.env.PORT || 4000;
-  // app.listen(PORT, () => {
-  //   console.log(`✅ Local server running at http://localhost:${PORT}`);
-  //   console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
-  // });
-
+// const PORT = process.env.PORT || 4000;
+// app.listen(PORT, () => {
+//   console.log(`✅ Local server running at http://localhost:${PORT}`);
+//   console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
+// });
